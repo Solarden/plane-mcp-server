@@ -10,7 +10,7 @@ from plane.models.modules import (
     CreateModule,
     Module,
     PaginatedArchivedModuleResponse,
-    PaginatedModuleLiteResponse,
+    PaginatedModuleResponse,
     PaginatedModuleWorkItemResponse,
     UpdateModule,
 )
@@ -33,7 +33,7 @@ def register_module_tools(mcp: FastMCP) -> None:
         cursor: str | None = None,
         per_page: int | None = None,
         order_by: str | None = None,
-    ) -> PaginatedModuleLiteResponse | PaginatedArchivedModuleResponse:
+    ) -> PaginatedModuleResponse | PaginatedArchivedModuleResponse:
         """
         List modules in a project.
 
@@ -46,7 +46,7 @@ def register_module_tools(mcp: FastMCP) -> None:
             order_by: Field to order results by. Prefix with '-' for descending.
 
         Returns:
-            Paginated envelope: results (lite modules) + total_count,
+            Paginated envelope: results (modules) + total_count,
             next_cursor, next_page_results.
         """
         client, workspace_slug = get_plane_client_context()
@@ -57,8 +57,10 @@ def register_module_tools(mcp: FastMCP) -> None:
                 project_id=project_id,
                 params=params.model_dump(exclude_none=True),
             )
-        return client.modules.list_lite(
-            workspace_slug=workspace_slug, project_id=project_id, params=params
+        return client.modules.list(
+            workspace_slug=workspace_slug,
+            project_id=project_id,
+            params=params.model_dump(exclude_none=True),
         )
 
     @mcp.tool()

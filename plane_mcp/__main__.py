@@ -132,6 +132,16 @@ def main() -> None:
     if len(sys.argv) > 1:
         server_mode = ServerMode(sys.argv[1])
 
+    # ponytail: fail fast rather than silently defaulting to Plane Cloud
+    # (api.plane.so) and leaking the PAT + workspace data. Covers all base-URL
+    # call sites (client + both auth providers) at boot, for every mode.
+    if not (os.getenv("PLANE_INTERNAL_BASE_URL") or os.getenv("PLANE_BASE_URL")):
+        raise ValueError(
+            "Neither PLANE_INTERNAL_BASE_URL nor PLANE_BASE_URL is set; refusing "
+            "to start (would default to https://api.plane.so and leak data to "
+            "Plane Cloud). Set the URL of your self-hosted Plane instance."
+        )
+
     if server_mode == ServerMode.STDIO:
         # Validate API_KEY and PLANE_WORKSPACE_SLUG are set
         if not os.getenv("PLANE_API_KEY"):

@@ -10,13 +10,13 @@ from plane.models.cycles import (
     CreateCycle,
     Cycle,
     PaginatedArchivedCycleResponse,
-    PaginatedCycleLiteResponse,
+    PaginatedCycleResponse,
     PaginatedCycleWorkItemResponse,
     TransferCycleWorkItemsRequest,
     UpdateCycle,
 )
 from plane.models.enums import CycleStatusEnum
-from plane.models.query_params import CycleLiteListQueryParams, LiteListQueryParams, WorkItemQueryParams
+from plane.models.query_params import CycleListQueryParams, LiteListQueryParams, WorkItemQueryParams
 from pydantic import Field
 
 from plane_mcp.client import get_plane_client_context
@@ -36,7 +36,7 @@ def register_cycle_tools(mcp: FastMCP) -> None:
         cursor: str | None = None,
         per_page: int | None = None,
         order_by: str | None = None,
-    ) -> PaginatedCycleLiteResponse | PaginatedArchivedCycleResponse:
+    ) -> PaginatedCycleResponse | list[Cycle] | PaginatedArchivedCycleResponse:
         """
         List cycles in a project. Active (non-archived) cycles by default.
 
@@ -52,8 +52,9 @@ def register_cycle_tools(mcp: FastMCP) -> None:
             order_by: Field to order results by. Prefix with '-' for descending.
 
         Returns:
-            Paginated envelope: results (lite cycles) + total_count,
-            next_cursor, next_page_results.
+            Paginated envelope (results + total_count, next_cursor,
+            next_page_results). With status="current" the server returns a
+            bare list of cycles instead.
         """
         client, workspace_slug = get_plane_client_context()
         if archived:
@@ -63,8 +64,8 @@ def register_cycle_tools(mcp: FastMCP) -> None:
                 project_id=project_id,
                 params=params.model_dump(exclude_none=True),
             )
-        params = CycleLiteListQueryParams(cursor=cursor, per_page=per_page, order_by=order_by, status=status)
-        return client.cycles.list_lite(workspace_slug=workspace_slug, project_id=project_id, params=params)
+        params = CycleListQueryParams(cursor=cursor, per_page=per_page, order_by=order_by, status=status)
+        return client.cycles.list(workspace_slug=workspace_slug, project_id=project_id, params=params)
 
     @mcp.tool()
     def create_cycle(

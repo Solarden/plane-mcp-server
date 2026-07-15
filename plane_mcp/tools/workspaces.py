@@ -2,8 +2,8 @@
 
 from fastmcp import FastMCP
 from plane.models.projects import ProjectFeature
-from plane.models.query_params import MemberListQueryParams
-from plane.models.workspaces import PaginatedWorkspaceMemberResponse, WorkspaceFeature
+from plane.models.query_params import MemberQueryParams
+from plane.models.workspaces import WorkspaceFeature, WorkspaceMember
 
 from plane_mcp.client import get_plane_client_context
 
@@ -20,27 +20,18 @@ def register_workspace_tools(mcp: FastMCP) -> None:
         role_slug: str | None = None,
         is_active: bool | None = None,
         is_bot: bool | None = None,
-        cursor: str | None = None,
-        per_page: int | None = 100,
-        order_by: str | None = None,
-    ) -> PaginatedWorkspaceMemberResponse:
+    ) -> list[WorkspaceMember]:
         """
-        List members of the current workspace (filterable, paginated).
+        List members of the current workspace (filterable).
 
         Optional filters first_name/last_name/email/display_name (case-insensitive
         contains), role_slug (exact), is_active, is_bot — combined with AND.
 
-        Args:
-            cursor: Prior response's next_cursor; omit for first page.
-            per_page: Results per page (1-1000, default 100).
-            order_by: Sort field; prefix '-' for descending.
-
         Returns:
-            Paginated envelope: results (members incl. role, role_slug,
-            is_active, is_bot) + total_count, next_cursor, next_page_results.
+            List of workspace members (incl. role, role_slug, is_active, is_bot).
         """
         client, workspace_slug = get_plane_client_context()
-        params = MemberListQueryParams(
+        params = MemberQueryParams(
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -48,11 +39,8 @@ def register_workspace_tools(mcp: FastMCP) -> None:
             role_slug=role_slug,
             is_active=is_active,
             is_bot=is_bot,
-            cursor=cursor,
-            per_page=per_page,
-            order_by=order_by,
         )
-        return client.workspaces.get_members_lite(workspace_slug=workspace_slug, params=params)
+        return client.workspaces.get_members(workspace_slug=workspace_slug, params=params)
 
     @mcp.tool()
     def get_features(project_id: str | None = None) -> WorkspaceFeature | ProjectFeature:
